@@ -11,11 +11,14 @@ const links = [
 ]
 
 addEventListener('fetch', event => {
-    event.respondWith(handleRequest(event.request))
+    event.respondWith(handleRoute(event.request))
 })
 
 /**
  *  Returns JSON on /links path
+ *  Used example from
+ *  https://github.com/cloudflare/worker-template-router
+ *  https://developers.cloudflare.com/workers/examples/return-json
  *  @param {Request} request
  */
 function handleLinksPath(request) {
@@ -27,14 +30,34 @@ function handleLinksPath(request) {
 }
 
 /**
- *  Handles the routing request for root and /links path
+ *  Retrieves a static HTML page on root path
+ *  Used example for content-type
+ *  https://developers.cloudflare.com/workers/examples/return-html
  *  @param {*} request
  */
-async function handleRequest(request) {
+async function handleRootPath(request) {
+    const init = {
+        headers: { 'content-type': 'text/html;charset=UTF-8'}
+    }
+
+    const body = await fetch("https://static-links-page.signalnerve.workers.dev")
+
+    return body
+}
+
+/**
+ *  Handles the routing request for root and /links path
+ *  Used example of routing from
+ *  https://github.com/cloudflare/worker-template-router
+ *  @param {*} request
+ */
+async function handleRoute(request) {
     const route = new Router()
 
     // return /links path
-    route.get('/links', request => handleLinksPath(request))
+    route.get("/links", request => handleLinksPath(request))
+    // return root path
+    route.get("/", request => handleRootPath(request))
 
     const response = await route.route(request)
     return response
