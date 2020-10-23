@@ -1,6 +1,6 @@
 name = "cloudflare-takehome"
 type = "webpack"
-account_id = ""
+account_id = "f4a1d7be2960297e92f50126be84bf55"
 workers_dev = true
 route = ""
 zone_id = ""

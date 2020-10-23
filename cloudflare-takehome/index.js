@@ -1,30 +1,41 @@
 const Router = require('./router')
 
 /**
- * Example of how router can be used in an application
- *  */
+ *  Links declaration in an array
+ */
+const links = [
+    { name: "Gas Computey", url: "https://rooty-tooty-gas-computey.herokuapp.com/"},
+    { name: "Yummi", url: "https://yummmi.herokuapp.com"},
+    { name: "LinkedIn", url: "https://www.linkedin.com/in/bennypham/"},
+    { name: "Github", url: "https://github.com/bennypham"},
+]
+
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
 
-function handler(request) {
+/**
+ *  Returns JSON on /links path
+ *  @param {Request} request
+ */
+function handleLinksPath(request) {
     const init = {
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json;charset=UTF-8' },
     }
-    const body = JSON.stringify({ some: 'json' })
+    const body = JSON.stringify(links, null, 2)
     return new Response(body, init)
 }
 
+/**
+ *  Handles the routing request for root and /links path
+ *  @param {*} request
+ */
 async function handleRequest(request) {
-    const r = new Router()
-    // Replace with the appropriate paths and handlers
-    r.get('.*/bar', () => new Response('responding for /bar'))
-    r.get('.*/foo', request => handler(request))
-    r.post('.*/foo.*', request => handler(request))
-    r.get('/demos/router/foo', request => fetch(request)) // return the response from the origin
+    const route = new Router()
 
-    r.get('/', () => new Response('Hello worker!')) // return a default message for the root route
+    // return /links path
+    route.get('/links', request => handleLinksPath(request))
 
-    const resp = await r.route(request)
-    return resp
+    const response = await route.route(request)
+    return response
 }
