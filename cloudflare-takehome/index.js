@@ -2,6 +2,8 @@ const Router = require('./router')
 
 /**
  *  Links in an array declaration
+ *  User Avatar link declaration
+ *  User name declaration
  */
 const links = [
     { name: "Gas Computey", url: "https://rooty-tooty-gas-computey.herokuapp.com/"},
@@ -9,6 +11,8 @@ const links = [
     { name: "LinkedIn", url: "https://www.linkedin.com/in/bennypham/"},
     { name: "Github", url: "https://github.com/bennypham"},
 ]
+const avatarLink = "https://raw.githubusercontent.com/bennypham/bennypham.github.io/master/Profile.jpg"
+const name = "Benny Pham"
 
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
@@ -19,6 +23,8 @@ addEventListener('fetch', event => {
  *  'a' for each link in API
  *  For each link, append the link url and name in the corresponding
  *  places for each 'a'
+ *  Element method "append" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
  */
 class LinksTransformer {
     constructor(links) {
@@ -33,7 +39,12 @@ class LinksTransformer {
         })
     }
 }
-
+/**
+ *  Custom class to remove display: none attribute and pass into static HTML
+ *  Will target the selector you pass in and remove attribute
+ *  Element method "removeAttribute" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
+ */
 class RemoveDisplayTransformer {
     constructor(display) {
         this.display = display
@@ -41,6 +52,38 @@ class RemoveDisplayTransformer {
 
     async element(element) {
         element.removeAttribute(this.display)
+    }
+}
+/**
+ *  Custom class to add avatar picture
+ *  Will target the img#avatar selector and allow to add image
+ *  If attribute is not available, create attribute and apply value
+ *  Element method "setAttribute" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
+ */
+class AvatarTransformer {
+    constructor(attribute, avatarLink) {
+        this.attribute = attribute
+        this.avatarLink = avatarLink
+    }
+
+    async element(element) {
+        element.setAttribute(this.attribute, this.avatarLink)
+    }
+}
+/**
+ *  Custom class to add name into static HTML
+ *  Will target the h1#name selector and add in the name
+ *  Element method "setInnerContent" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
+ */
+class UsernameTransformer {
+    constructor(name) {
+        this.name = name
+    }
+
+    async element(element) {
+        element.setInnerContent(this.name)
     }
 }
 
@@ -61,7 +104,9 @@ function handleLinksPath(request) {
 
 /**
  *  Retrieves a static HTML page on root path
- *  Used example for content-type, HTMLRewrite
+ *  Enchanced using HTMLRewriter on the div#links, div#profile
+ *  img#avatar, and h1#name
+ *  Used example for content-type, HTMLRewriter
  *  https://developers.cloudflare.com/workers/examples/return-html
  *  https://developers.cloudflare.com/workers/tutorials/localize-a-website
  *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
@@ -77,11 +122,12 @@ async function handleRootPath(request) {
     const newHTML = new HTMLRewriter()
       .on("div#links", new LinksTransformer(links))
       .on("div#profile", new RemoveDisplayTransformer("style"))
+      .on("img#avatar", new AvatarTransformer("src", avatarLink))
+      .on("h1#name", new UsernameTransformer(name))
+      .on("div#social", new RemoveDisplayTransformer("style"))
       .transform(body)
 
     return newHTML
-
-
 }
 
 /**
