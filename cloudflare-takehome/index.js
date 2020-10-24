@@ -1,7 +1,7 @@
 const Router = require('./router')
 
 /**
- *  Links declaration in an array
+ *  Links in an array declaration
  */
 const links = [
     { name: "Gas Computey", url: "https://rooty-tooty-gas-computey.herokuapp.com/"},
@@ -13,6 +13,36 @@ const links = [
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
 })
+/**
+ *  Custom class to pass in links array into static HTML
+ *  Will target the div#links selector and add in a new
+ *  'a' for each link in API
+ *  For each link, append the link url and name in the corresponding
+ *  places for each 'a'
+ */
+class LinksTransformer {
+    constructor(links) {
+        this.links = links
+    }
+
+    async element(element) {
+        this.links.forEach(link => {
+            element.append(`<a href=${link.url}>${link.name}</a>`, {
+                html: true
+            })
+        })
+    }
+}
+
+class RemoveDisplayTransformer {
+    constructor(display) {
+        this.display = display
+    }
+
+    async element(element) {
+        element.removeAttribute(this.display)
+    }
+}
 
 /**
  *  Returns JSON on /links path
@@ -31,8 +61,10 @@ function handleLinksPath(request) {
 
 /**
  *  Retrieves a static HTML page on root path
- *  Used example for content-type
+ *  Used example for content-type, HTMLRewrite
  *  https://developers.cloudflare.com/workers/examples/return-html
+ *  https://developers.cloudflare.com/workers/tutorials/localize-a-website
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
  *  @param {*} request
  */
 async function handleRootPath(request) {
@@ -40,9 +72,16 @@ async function handleRootPath(request) {
         headers: { 'content-type': 'text/html;charset=UTF-8'}
     }
 
-    const body = await fetch("https://static-links-page.signalnerve.workers.dev")
+    const body = await fetch("https://static-links-page.signalnerve.workers.dev", init)
 
-    return body
+    const newHTML = new HTMLRewriter()
+      .on("div#links", new LinksTransformer(links))
+      .on("div#profile", new RemoveDisplayTransformer("style"))
+      .transform(body)
+
+    return newHTML
+
+
 }
 
 /**
