@@ -18,6 +18,7 @@ const socialLinks = [
     { url: "https://www.linkedin.com/in/bennypham/", svg: "https://simpleicons.org/icons/linkedin.svg"},
     { url: "https://twitter.com/bennyyphamm", svg: "https://simpleicons.org/icons/twitter.svg"},
 ]
+const title = "Hello! Don't Leave Me!"
 
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
@@ -112,6 +113,21 @@ class SocialLinksTransformer {
         })
     }
 }
+/**
+ *  Custom class to update title field in static HTML
+ *  Will target the title selector and add in the new title
+ *  Element method "setInnerContent" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
+ */
+class TitleTransformer {
+    constructor(title) {
+        this.title = title
+    }
+
+    async element(element) {
+        element.setInnerContent(this.title)
+    }
+}
 
 /**
  *  Returns JSON on /links path
@@ -152,6 +168,7 @@ async function handleRootPath(request) {
       .on("h1#name", new UsernameTransformer(name))
       .on("div#social", new RemoveDisplayTransformer("style"))
       .on("div#social", new SocialLinksTransformer(socialLinks))
+      .on("title", new TitleTransformer(title))
       .transform(body)
 
     return newHTML
