@@ -4,15 +4,20 @@ const Router = require('./router')
  *  Links in an array declaration
  *  User Avatar link declaration
  *  User name declaration
+ *  Social links in an array declaration
  */
 const links = [
     { name: "Gas Computey", url: "https://rooty-tooty-gas-computey.herokuapp.com/"},
     { name: "Yummi", url: "https://yummmi.herokuapp.com"},
-    { name: "LinkedIn", url: "https://www.linkedin.com/in/bennypham/"},
     { name: "Github", url: "https://github.com/bennypham"},
 ]
 const avatarLink = "https://raw.githubusercontent.com/bennypham/bennypham.github.io/master/Profile.jpg"
 const name = "Benny Pham"
+const socialLinks = [
+    { url: "https://www.yelp.com/user_details?userid=I1cTbh9H1Flgu31MHBx4aA", svg: "https://simpleicons.org/icons/yelp.svg"},
+    { url: "https://www.linkedin.com/in/bennypham/", svg: "https://simpleicons.org/icons/linkedin.svg"},
+    { url: "https://twitter.com/bennyyphamm", svg: "https://simpleicons.org/icons/twitter.svg"},
+]
 
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
@@ -55,7 +60,7 @@ class RemoveDisplayTransformer {
     }
 }
 /**
- *  Custom class to add avatar picture
+ *  Custom class to pass in avatar picture
  *  Will target the img#avatar selector and allow to add image
  *  If attribute is not available, create attribute and apply value
  *  Element method "setAttribute" source:
@@ -72,7 +77,7 @@ class AvatarTransformer {
     }
 }
 /**
- *  Custom class to add name into static HTML
+ *  Custom class to pass name into static HTML
  *  Will target the h1#name selector and add in the name
  *  Element method "setInnerContent" source:
  *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
@@ -84,6 +89,27 @@ class UsernameTransformer {
 
     async element(element) {
         element.setInnerContent(this.name)
+    }
+}
+/**
+ *  Custom class to pass in social links into static HTML
+ *  Will target the div#social selector and add in a new
+ *  'a' for each link with their own svg
+ *  For each link, append the link url and svg in the corresponding places
+ *  Element method "append" source:
+ *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
+ */
+class SocialLinksTransformer {
+    constructor(socialLinks) {
+        this.socialLinks = socialLinks
+    }
+
+    async element(element) {
+        this.socialLinks.forEach(socialLink => {
+          element.append(`<a href=${socialLink.url}><img src=${socialLink.svg}></img></a>`, {
+            html: true
+          })
+        })
     }
 }
 
@@ -105,7 +131,7 @@ function handleLinksPath(request) {
 /**
  *  Retrieves a static HTML page on root path
  *  Enchanced using HTMLRewriter on the div#links, div#profile
- *  img#avatar, and h1#name
+ *  img#avatar, and h1#name, div#social
  *  Used example for content-type, HTMLRewriter
  *  https://developers.cloudflare.com/workers/examples/return-html
  *  https://developers.cloudflare.com/workers/tutorials/localize-a-website
@@ -125,6 +151,7 @@ async function handleRootPath(request) {
       .on("img#avatar", new AvatarTransformer("src", avatarLink))
       .on("h1#name", new UsernameTransformer(name))
       .on("div#social", new RemoveDisplayTransformer("style"))
+      .on("div#social", new SocialLinksTransformer(socialLinks))
       .transform(body)
 
     return newHTML
