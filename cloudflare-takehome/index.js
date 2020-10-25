@@ -5,6 +5,8 @@ const Router = require('./router')
  *  User Avatar link declaration
  *  User name declaration
  *  Social links in an array declaration
+ *  Title declaration
+ *  Colors array declaration
  */
 const links = [
     { name: "Gas Computey", url: "https://rooty-tooty-gas-computey.herokuapp.com/"},
@@ -19,6 +21,18 @@ const socialLinks = [
     { url: "https://twitter.com/bennyyphamm", svg: "https://simpleicons.org/icons/twitter.svg"},
 ]
 const title = "Hello! Don't Leave Me!"
+const backgroundColors = [
+    "#A0AEC0",
+    "#F56565",
+    "#ED8936",
+    "#ECC94B",
+    "#48BB78",
+    "#38B2AC",
+    "#4299E1",
+    "#667EEA",
+    "#9F7AEA",
+    "#ED64A6"
+]
 
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
@@ -129,6 +143,17 @@ class TitleTransformer {
     }
 }
 
+class BackgroundColorTransformer {
+    constructor(attribute, color) {
+        this.attribute = attribute
+        this.color = color
+    }
+
+    async element(element) {
+        element.setAttribute(this.attribute, this.color)
+    }
+}
+
 /**
  *  Returns JSON on /links path
  *  Used example from
@@ -169,6 +194,8 @@ async function handleRootPath(request) {
       .on("div#social", new RemoveDisplayTransformer("style"))
       .on("div#social", new SocialLinksTransformer(socialLinks))
       .on("title", new TitleTransformer(title))
+      .on("body", new RemoveDisplayTransformer("class"))
+      .on("body", new BackgroundColorTransformer("style", `background-color:${backgroundColors[Math.floor(Math.random() * backgroundColors.length)]}`))
       .transform(body)
 
     return newHTML
