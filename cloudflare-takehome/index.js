@@ -13,14 +13,11 @@ const links = [
     { name: "Yummi", url: "https://yummmi.herokuapp.com"},
     { name: "Github", url: "https://github.com/bennypham"},
 ]
-const avatarLink = "https://raw.githubusercontent.com/bennypham/bennypham.github.io/master/Profile.jpg"
-const name = "Benny Pham"
 const socialLinks = [
     { url: "https://www.yelp.com/user_details?userid=I1cTbh9H1Flgu31MHBx4aA", svg: "https://simpleicons.org/icons/yelp.svg"},
     { url: "https://www.linkedin.com/in/bennypham/", svg: "https://simpleicons.org/icons/linkedin.svg"},
     { url: "https://twitter.com/bennyyphamm", svg: "https://simpleicons.org/icons/twitter.svg"},
 ]
-const title = "Hello! Don't Leave Me!"
 const backgroundColors = [
     "#A0AEC0",
     "#F56565",
@@ -33,6 +30,10 @@ const backgroundColors = [
     "#9F7AEA",
     "#ED64A6"
 ]
+
+const avatarLink = "https://raw.githubusercontent.com/bennypham/bennypham.github.io/master/Profile.jpg"
+const name = "Benny Pham"
+const title = "Hello! Don't Leave Me!"
 
 addEventListener('fetch', event => {
     event.respondWith(handleRoute(event.request))
@@ -60,12 +61,11 @@ class LinksTransformer {
     }
 }
 /**
- *  Custom class to remove display: none attribute and pass into static HTML
- *  Will target the selector you pass in and remove attribute
+ *  Custom class to remove attribute and pass into static HTML
  *  Element method "removeAttribute" source:
  *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
  */
-class RemoveDisplayTransformer {
+class RemoveAttributeTransformer {
     constructor(display) {
         this.display = display
     }
@@ -75,35 +75,33 @@ class RemoveDisplayTransformer {
     }
 }
 /**
- *  Custom class to pass in avatar picture
- *  Will target the img#avatar selector and allow to add image
+ *  Custom class to set attribute for element and pass to static HTML
  *  If attribute is not available, create attribute and apply value
  *  Element method "setAttribute" source:
  *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
  */
-class AvatarTransformer {
-    constructor(attribute, avatarLink) {
+class AttributeTransformer {
+    constructor(attribute, content) {
         this.attribute = attribute
-        this.avatarLink = avatarLink
+        this.content = content
     }
 
     async element(element) {
-        element.setAttribute(this.attribute, this.avatarLink)
+        element.setAttribute(this.attribute, this.content)
     }
 }
 /**
- *  Custom class to pass name into static HTML
- *  Will target the h1#name selector and add in the name
+ *  Custom class to pass content of element into static HTML
  *  Element method "setInnerContent" source:
  *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
  */
-class UsernameTransformer {
-    constructor(name) {
-        this.name = name
+class InnerContentTransformer {
+    constructor(content) {
+        this.content = content
     }
 
     async element(element) {
-        element.setInnerContent(this.name)
+        element.setInnerContent(this.content)
     }
 }
 /**
@@ -127,35 +125,9 @@ class SocialLinksTransformer {
         })
     }
 }
-/**
- *  Custom class to update title field in static HTML
- *  Will target the title selector and add in the new title
- *  Element method "setInnerContent" source:
- *  https://developers.cloudflare.com/workers/runtime-apis/html-rewriter
- */
-class TitleTransformer {
-    constructor(title) {
-        this.title = title
-    }
-
-    async element(element) {
-        element.setInnerContent(this.title)
-    }
-}
-
-class BackgroundColorTransformer {
-    constructor(attribute, color) {
-        this.attribute = attribute
-        this.color = color
-    }
-
-    async element(element) {
-        element.setAttribute(this.attribute, this.color)
-    }
-}
 
 /**
- *  Returns JSON on /links path
+ *  Handles /links path and Returns JSON
  *  Used example from
  *  https://github.com/cloudflare/worker-template-router
  *  https://developers.cloudflare.com/workers/examples/return-json
@@ -170,9 +142,9 @@ function handleLinksPath(request) {
 }
 
 /**
- *  Retrieves a static HTML page on root path
- *  Enchanced using HTMLRewriter on the div#links, div#profile
- *  img#avatar, and h1#name, div#social
+ *  Handles and retrieves static HTML page on root path
+ *  Enchanced static HTML page using HTMLRewriter on the
+ *  div#links, div#profile, img#avatar, h1#name, div#social, title, and body
  *  Used example for content-type, HTMLRewriter
  *  https://developers.cloudflare.com/workers/examples/return-html
  *  https://developers.cloudflare.com/workers/tutorials/localize-a-website
@@ -188,14 +160,13 @@ async function handleRootPath(request) {
 
     const newHTML = new HTMLRewriter()
       .on("div#links", new LinksTransformer(links))
-      .on("div#profile", new RemoveDisplayTransformer("style"))
-      .on("img#avatar", new AvatarTransformer("src", avatarLink))
-      .on("h1#name", new UsernameTransformer(name))
-      .on("div#social", new RemoveDisplayTransformer("style"))
+      .on("div#profile", new RemoveAttributeTransformer("style"))
+      .on("img#avatar", new AttributeTransformer("src", avatarLink))
+      .on("h1#name", new InnerContentTransformer(name))
+      .on("div#social", new RemoveAttributeTransformer("style"))
       .on("div#social", new SocialLinksTransformer(socialLinks))
-      .on("title", new TitleTransformer(title))
-      .on("body", new RemoveDisplayTransformer("class"))
-      .on("body", new BackgroundColorTransformer("style", `background-color:${backgroundColors[Math.floor(Math.random() * backgroundColors.length)]}`))
+      .on("title", new InnerContentTransformer(title))
+      .on("body", new AttributeTransformer("style", `background-color:${backgroundColors[Math.floor(Math.random() * backgroundColors.length)]}`))
       .transform(body)
 
     return newHTML
